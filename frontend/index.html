@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BharatYatra AI - India Tourism & Local Guides</title>
+  <meta name="theme-color" content="#FF6B35">
+  <meta name="description" content="AI-Powered Destination Discovery & Verified Local Tourist Guides Across Incredible India">
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Outer wrapper with desktop mobile device frame support -->
+  <div class="device-container">
+    <div class="mobile-frame">
+      
+      <!-- Status bar simulation -->
+      <div class="status-bar">
+        <span class="status-time" id="status-time">09:41</span>
+        <div class="status-icons">
+          <span>📶</span>
+          <span>5G</span>
+          <span>🔋 98%</span>
+        </div>
+      </div>
+
+      <!-- App Header -->
+      <header class="app-header">
+        <div class="header-brand">
+          <div class="brand-icon">🇮🇳</div>
+          <div>
+            <h1 class="brand-title">BharatYatra <span class="ai-badge">AI</span></h1>
+            <p class="brand-subtitle">Smart Tourism & Verified Local Guides</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="leads-btn" id="leads-toggle-btn" title="View Captured Leads">
+            <span>📋 Leads</span>
+            <span class="leads-count-pill" id="header-leads-count">0</span>
+          </button>
+          <button class="settings-btn" id="api-key-toggle-btn" title="AI Settings">⚙️</button>
+        </div>
+      </header>
+
+      <!-- Dynamic Platform Stats Ticker Bar -->
+      <div class="platform-stats-bar" id="platform-stats-bar">
+        <span>🇮🇳 <strong id="stat-dest-count">12</strong> Destinations</span>
+        <span class="dot">•</span>
+        <span>🛡️ <strong id="stat-agent-count">21+</strong> Verified Guides</span>
+        <span class="dot">•</span>
+        <span>💬 100% Direct WhatsApp</span>
+      </div>
+
+      <!-- Optional API Key Drawer/Modal -->
+      <div class="api-key-banner" id="api-key-banner" style="display: none;">
+        <div class="api-key-content">
+          <label for="user-gemini-key">Custom Gemini API Key (Optional):</label>
+          <div class="input-row">
+            <input type="password" id="user-gemini-key" placeholder="AIzaSy... (leave blank for local AI engine)">
+            <button id="save-key-btn" class="btn-sm">Save</button>
+          </div>
+          <p class="key-hint">Without a key, BharatYatra's built-in India Tourism AI heuristic engine runs instantly.</p>
+        </div>
+      </div>
+
+      <!-- Main Scrollable App Content -->
+      <main class="app-body" id="app-body">
+        
+        <!-- ================= TAB 1: AI TRIP PLANNER ================= -->
+        <section id="tab-planner" class="tab-view active">
+          
+          <!-- Hero Banner -->
+          <div class="hero-card">
+            <div class="hero-badge">✨ AI Destination Matcher</div>
+            <h2 class="hero-title">Where in India should you explore next?</h2>
+            <p class="hero-desc">Tell our AI your budget, travel style, and companions. We'll match the perfect place & connect you with certified local guides.</p>
+          </div>
+
+          <!-- Quick Prompts / Pills -->
+          <div class="quick-chips">
+            <span class="chip active" data-vibe="mountains" data-comp="couple" data-budget="moderate" data-days="5">❄️ Snow & Hills</span>
+            <span class="chip" data-vibe="nature" data-comp="family" data-budget="luxury" data-days="6">🌴 Kerala Backwaters</span>
+            <span class="chip" data-vibe="mountains" data-comp="couple" data-budget="luxury" data-days="6">🏔️ Kashmir Valley</span>
+            <span class="chip" data-vibe="beaches" data-comp="couple" data-budget="luxury" data-days="5">🤿 Andaman Scuba</span>
+            <span class="chip" data-vibe="heritage" data-comp="friends" data-budget="moderate" data-days="4">🐫 Thar Desert</span>
+            <span class="chip" data-vibe="heritage" data-comp="couple" data-budget="moderate" data-days="5">🏰 Royal Palaces</span>
+            <span class="chip" data-vibe="spiritual" data-comp="solo" data-budget="budget" data-days="4">🕉️ Sacred Ganga</span>
+            <span class="chip" data-vibe="beaches" data-comp="friends" data-budget="moderate" data-days="4">🏖️ Goa Coast</span>
+            <span class="chip" data-vibe="northeast" data-comp="friends" data-budget="moderate" data-days="6">☁️ Meghalaya Clouds</span>
+          </div>
+
+          <!-- Interactive AI Preferences Form -->
+          <div class="planner-form-card">
+            <div class="form-group">
+              <label>Custom Travel Prompt (Optional):</label>
+              <input type="text" id="ai-custom-prompt" placeholder="e.g., Peaceful romantic escape with tea estates and good food..." class="form-input">
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Vibe / Category:</label>
+                <select id="ai-vibe" class="form-select">
+                  <option value="any">✨ Surprise Me</option>
+                  <option value="mountains">🏔️ Mountains & Snow</option>
+                  <option value="nature">🌿 Nature & Tea Gardens</option>
+                  <option value="heritage">👑 Heritage & Royal Forts</option>
+                  <option value="spiritual">🕉️ Spiritual & Sacred</option>
+                  <option value="beaches">🏖️ Beaches & Coastal</option>
+                  <option value="northeast">☁️ Northeast & Waterfalls</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Traveling With:</label>
+                <select id="ai-companions" class="form-select">
+                  <option value="couple">👩‍❤️‍👨 Couple / Honeymoon</option>
+                  <option value="family">👨‍👩‍👧‍👦 Family</option>
+                  <option value="friends">🎒 Friends Group</option>
+                  <option value="solo">🚶 Solo Explorer</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Budget Level:</label>
+                <select id="ai-budget" class="form-select">
+                  <option value="budget">💰 Budget (₹10k - ₹20k)</option>
+                  <option value="moderate" selected>💳 Moderate (₹20k - ₹40k)</option>
+                  <option value="luxury">💎 Luxury / Heritage (₹40k+)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Duration:</label>
+                <div class="duration-control">
+                  <input type="range" id="ai-duration" min="2" max="10" value="4" class="range-slider">
+                  <span id="duration-val" class="duration-label">4 Days</span>
+                </div>
+              </div>
+            </div>
+
+            <button id="find-destinations-btn" class="btn-primary">
+              <span class="btn-icon">⚡</span> Suggest Best Place & Local Agents
+            </button>
+          </div>
+
+          <!-- AI Results Container -->
+          <div id="ai-results-area" class="results-area" style="display: none;">
+            
+            <div class="results-header">
+              <div class="ai-status-pill" id="ai-engine-pill">AI Engine: Processing...</div>
+            </div>
+
+            <!-- Narrative Card -->
+            <div class="ai-narrative-box" id="ai-narrative-text"></div>
+
+            <!-- Primary Recommended Destination Card -->
+            <div class="recommendation-card" id="primary-dest-card">
+              <div class="card-img-wrapper">
+                <img id="primary-dest-img" src="" alt="Destination">
+                <span class="dest-badge" id="primary-dest-badge">Best Match</span>
+              </div>
+              <div class="card-content">
+                <div class="dest-region-tag" id="primary-dest-region">Himachal Pradesh • North India</div>
+                <h3 class="dest-title" id="primary-dest-name">Manali & Solang Valley</h3>
+                <p class="dest-tagline" id="primary-dest-tagline"></p>
+
+                <div class="dest-meta-row">
+                  <div class="meta-item">
+                    <span class="meta-icon">🗓️</span>
+                    <div>
+                      <small>Best Season</small>
+                      <strong id="primary-dest-season">Oct - Jun</strong>
+                    </div>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-icon">💰</span>
+                    <div>
+                      <small>Est. Budget</small>
+                      <strong id="primary-dest-budget">₹18,000 - ₹35,000</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Highlights Chips -->
+                <div class="highlights-container" id="primary-dest-highlights"></div>
+
+                <!-- Itinerary Accordion -->
+                <div class="itinerary-section">
+                  <div class="itinerary-header">
+                    <h4>🗓️ Suggested Day-by-Day Itinerary</h4>
+                    <span class="toggle-itinerary-icon">▼</span>
+                  </div>
+                  <div class="itinerary-list" id="itinerary-list"></div>
+                  
+                  <!-- Itinerary Action Buttons -->
+                  <div class="itinerary-actions-row">
+                    <button class="btn-action-sm" id="btn-copy-itinerary">
+                      <span>📋</span> Copy WhatsApp Summary
+                    </button>
+                    <button class="btn-action-sm" id="btn-print-itinerary">
+                      <span>🖨️</span> Save / Print Plan
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Estimated Cost Breakdown Card -->
+                <div class="cost-breakdown-card" id="cost-breakdown-card">
+                  <div class="cost-header">
+                    <h4>💰 Estimated Trip Cost Breakdown</h4>
+                    <span class="cost-total-badge" id="cost-total-badge">₹28,000 Total</span>
+                  </div>
+                  <div class="cost-items-grid" id="cost-items-grid">
+                    <!-- Populated dynamically based on duration and travelers -->
+                  </div>
+                  <div class="cost-disclaimer">⚡ Transparent estimates without middleman commissions. Confirm directly with your local agent.</div>
+                </div>
+
+                <!-- Verified Agents for this Destination -->
+                <div class="agents-section">
+                  <div class="agents-header">
+                    <h4>🤝 Top Verified Local Agents in this Area</h4>
+                    <span class="badge-count" id="agent-count-badge">3 Available</span>
+                  </div>
+                  <p class="agents-subtext">Directly connect with certified guides & local tour operators for transparent rates.</p>
+                  <div class="agents-list" id="recommended-agents-list"></div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Alternative Destinations -->
+            <div class="alternatives-section" id="alternatives-wrapper">
+              <h4 class="subhead">✨ Alternative Destinations You Might Love</h4>
+              <div class="alternatives-grid" id="alternatives-grid"></div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ================= TAB 2: EXPLORE INDIA ================= -->
+        <section id="tab-explore" class="tab-view">
+          <div class="view-header">
+            <h2>Explore Incredible India</h2>
+            <p>Hand-picked top destinations with verified local guide networks</p>
+          </div>
+
+          <!-- Category Filter Scroll -->
+          <div class="filter-scroll">
+            <button class="filter-pill active" data-cat="all">All</button>
+            <button class="filter-pill" data-cat="mountains">🏔️ Mountains</button>
+            <button class="filter-pill" data-cat="nature">🌿 Nature & Tea</button>
+            <button class="filter-pill" data-cat="heritage">👑 Heritage</button>
+            <button class="filter-pill" data-cat="spiritual">🕉️ Spiritual</button>
+            <button class="filter-pill" data-cat="beaches">🏖️ Beaches</button>
+            <button class="filter-pill" data-cat="northeast">☁️ Northeast</button>
+          </div>
+
+          <div class="destinations-grid" id="all-destinations-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- ================= TAB 3: VERIFIED AGENTS ================= -->
+        <section id="tab-agents" class="tab-view">
+          <div class="view-header">
+            <h2>Verified Local Agents</h2>
+            <p>Govt-certified guides, trek leaders & authentic travel planners</p>
+          </div>
+
+          <div class="search-filter-box">
+            <input type="text" id="agent-search-input" placeholder="Search by name, state, or specialty (e.g., Manali, Houseboat, Trek)..." class="form-input">
+          </div>
+
+          <div class="trust-banner">
+            <div class="trust-item">
+              <span class="trust-icon">🛡️</span>
+              <div>
+                <strong>100% Verified Identities</strong>
+                <small>Local government & tourism department registered</small>
+              </div>
+            </div>
+            <div class="trust-item">
+              <span class="trust-icon">💬</span>
+              <div>
+                <strong>Direct WhatsApp & Call</strong>
+                <small>No middleman platform commissions</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="agents-full-list" id="all-agents-list">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+        <!-- ================= TAB 4: ABOUT & TIPS ================= -->
+        <section id="tab-tips" class="tab-view">
+          <div class="view-header">
+            <h2>India Travel Smart Guide</h2>
+            <p>Essential advice for seamless journeys across India</p>
+          </div>
+
+          <div class="tips-accordion">
+            <div class="tip-card">
+              <h3>🧭 How does BharatYatra AI work?</h3>
+              <p>BharatYatra AI uses Google Gemini models and deep Indian tourism knowledge to match your travel party (family, couple, friends, solo), season, and budget to the best destinations in India, and pairs you directly with licensed local guides.</p>
+            </div>
+
+            <div class="tip-card">
+              <h3>🛡️ Why book with verified local agents?</h3>
+              <p>Local guides know hidden scenic spots, local festivals, authentic food joints, and safe driving routes. Booking locally supports native communities and avoids paying 20-30% middleman markups.</p>
+            </div>
+
+            <div class="tip-card">
+              <h3>📱 How to install this on your phone</h3>
+              <p>Open this URL on your phone's browser (Safari or Chrome), tap the browser Share / Menu icon, and select <strong>"Add to Home Screen"</strong>. It installs as a full-screen mobile app!</p>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- Bottom Navigation Bar -->
+      <nav class="bottom-nav">
+        <button class="nav-item active" data-target="tab-planner">
+          <span class="nav-icon">🤖</span>
+          <span class="nav-label">AI Matcher</span>
+        </button>
+        <button class="nav-item" data-target="tab-explore">
+          <span class="nav-icon">🗺️</span>
+          <span class="nav-label">Explore</span>
+        </button>
+        <button class="nav-item" data-target="tab-agents">
+          <span class="nav-icon">🤝</span>
+          <span class="nav-label">Agents</span>
+        </button>
+        <button class="nav-item" data-target="tab-tips">
+          <span class="nav-icon">💡</span>
+          <span class="nav-label">Tips</span>
+        </button>
+      </nav>
+
+    </div>
+  </div>
+
+  <!-- Enquiry / Contact Modal -->
+  <div class="modal-overlay" id="enquiry-modal" style="display: none;">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <h3 id="modal-agent-name">Contact Local Agent</h3>
+        <button class="close-modal-btn" id="close-modal-btn">&times;</button>
+      </div>
+      
+      <div class="modal-agent-preview" id="modal-agent-preview"></div>
+
+      <form id="enquiry-form" class="modal-form">
+        <input type="hidden" id="enq-agent-id">
+        <input type="hidden" id="enq-dest-id">
+
+        <div class="form-group">
+          <label>Your Name *</label>
+          <input type="text" id="enq-name" required placeholder="e.g., Rohit Sharma" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label>Phone / WhatsApp Number *</label>
+          <input type="tel" id="enq-phone" required placeholder="e.g., +91 9876543210" class="form-input">
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Travel Date</label>
+            <input type="date" id="enq-date" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Travelers</label>
+            <input type="number" id="enq-travelers" value="2" min="1" max="20" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Special Requests or Requirements</label>
+          <textarea id="enq-notes" rows="2" placeholder="e.g., Need private AC cab, senior citizen friendly, snow adventure..." class="form-input"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn-whatsapp">
+            <span>💬</span> Send Enquiry via WhatsApp
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Real-Time Leads & Bookings Drawer / Modal -->
+  <div class="modal-overlay" id="leads-modal" style="display: none;">
+    <div class="modal-sheet">
+      <div class="modal-drag-bar"></div>
+      <div class="modal-header">
+        <div>
+          <h3>📋 Live Captured Leads & Enquiries</h3>
+          <p style="font-size:11px; color:#64748B; margin-top:2px;">Saved persistently in SQLite database</p>
+        </div>
+        <button class="close-modal-btn" id="close-leads-btn">&times;</button>
+      </div>
+
+      <div class="leads-modal-body" id="leads-modal-body">
+        <div class="leads-list" id="leads-list-container">
+          <!-- Dynamically populated from /api/enquiries -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Box -->
+  <div class="toast" id="toast-notification">Notification message</div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
