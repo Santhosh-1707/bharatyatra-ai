@@ -9,8 +9,10 @@ let lastRecommendationData = null;
 // Register PWA Service Worker for offline capability
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').then((reg) => {
-      console.log('ServiceWorker registered with scope:', reg.scope);
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {
+      return navigator.serviceWorker.register('/service-worker.js');
+    }).then((reg) => {
+      if (reg) console.log('ServiceWorker registered with scope:', reg.scope);
     }).catch((err) => {
       console.log('ServiceWorker registration skipped:', err);
     });
@@ -59,22 +61,29 @@ function initClock() {
   setInterval(updateTime, 10000);
 }
 
-// Fetch live platform stats for header & trust bar
+// Fetch live platform stats for header & trust bar (with static offline fallback)
 async function refreshPlatformStats() {
+  const destEl = document.getElementById("stat-dest-count");
+  const agentEl = document.getElementById("stat-agent-count");
+  const leadsCount = document.getElementById("header-leads-count");
+
+  const localLeads = JSON.parse(localStorage.getItem("bharatyatra_leads") || "[]");
+  const staticDestCount = (window.STATIC_DESTINATIONS && window.STATIC_DESTINATIONS.length) || 12;
+  const staticAgentCount = (window.STATIC_AGENTS && window.STATIC_AGENTS.length) || 21;
+
+  if (destEl) destEl.textContent = staticDestCount;
+  if (agentEl) agentEl.textContent = `${staticAgentCount}+`;
+  if (leadsCount) leadsCount.textContent = localLeads.length;
+
   try {
     const res = await fetch(`${API_BASE}/api/stats`);
     if (!res.ok) return;
     const stats = await res.json();
-    
-    const destEl = document.getElementById("stat-dest-count");
-    const agentEl = document.getElementById("stat-agent-count");
-    const leadsCount = document.getElementById("header-leads-count");
-
     if (destEl) destEl.textContent = stats.total_destinations;
     if (agentEl) agentEl.textContent = `${stats.total_verified_agents}+`;
-    if (leadsCount) leadsCount.textContent = stats.enquiries_captured || 0;
+    if (leadsCount) leadsCount.textContent = (stats.enquiries_captured || 0) + localLeads.length;
   } catch (err) {
-    console.warn("Stats refresh notice:", err);
+    // Gracefully use static numbers already populated
   }
 }
 
@@ -151,46 +160,51 @@ async function openLeadsModal() {
   const modal = document.getElementById("leads-modal");
   const container = document.getElementById("leads-list-container");
   modal.style.display = "flex";
-  container.innerHTML = `<p style="padding:15px; color:#94A3B8; font-size:12px; text-align:center;">Loading live leads from database...</p>`;
+  container.innerHTML = `<p style="padding:15px; color:#94A3B8; font-size:12px; text-align:center;">Loading live leads...</p>`;
 
+  let backendLeads = [];
   try {
     const res = await fetch(`${API_BASE}/api/enquiries`);
-    const leads = await res.json();
-    
-    // Update count in header
-    const leadsCount = document.getElementById("header-leads-count");
-    if (leadsCount) leadsCount.textContent = leads.length;
-
-    if (!leads || leads.length === 0) {
-      container.innerHTML = `
-        <div style="text-align:center; padding:30px 10px; color:#64748B;">
-          <div style="font-size:32px; margin-bottom:8px;">📭</div>
-          <strong style="font-size:14px; color:#0F172A;">No Leads Captured Yet</strong>
-          <p style="font-size:12px; margin-top:4px;">Enquire with any verified guide on the platform to log a lead in real-time!</p>
-        </div>
-      `;
-      return;
+    if (res.ok) {
+      backendLeads = await res.json();
     }
-
-    container.innerHTML = leads.map(l => `
-      <div class="lead-card">
-        <div class="lead-top">
-          <span class="lead-id">⚡ ${l.id}</span>
-          <span class="lead-time">${l.created_at || 'Just now'}</span>
-        </div>
-        <div class="lead-dest">📍 ${l.destination_name}</div>
-        <div class="lead-agent">🤝 Assigned: ${l.agent_name} (${l.agency_name})</div>
-        <div class="lead-traveler">
-          👤 <strong>${l.traveler_name}</strong> • ${l.num_travelers} Travelers<br>
-          📞 ${l.traveler_phone} • 🗓️ ${l.travel_dates || 'Flexible'}<br>
-          <em style="color:#0284C7;">"${l.notes || 'Looking for tour quote'}"</em>
-        </div>
-      </div>
-    `).join("");
-
   } catch (err) {
-    container.innerHTML = `<p style="padding:15px; color:#EF4444; font-size:12px; text-align:center;">Failed to fetch database leads.</p>`;
+    // Offline or GitHub Pages
   }
+
+  const localLeads = JSON.parse(localStorage.getItem("bharatyatra_leads") || "[]");
+  const combinedLeads = [...localLeads, ...backendLeads];
+  
+  // Update count in header
+  const leadsCount = document.getElementById("header-leads-count");
+  if (leadsCount) leadsCount.textContent = combinedLeads.length;
+
+  if (!combinedLeads || combinedLeads.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:30px 10px; color:#64748B;">
+        <div style="font-size:32px; margin-bottom:8px;">📭</div>
+        <strong style="font-size:14px; color:#0F172A;">No Leads Captured Yet</strong>
+        <p style="font-size:12px; margin-top:4px;">Enquire with any verified guide on the platform to log a lead in real-time!</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = combinedLeads.map(l => `
+    <div class="lead-card">
+      <div class="lead-top">
+        <span class="lead-id">⚡ ${l.id}</span>
+        <span class="lead-time">${l.created_at || 'Just now'}</span>
+      </div>
+      <div class="lead-dest">📍 ${l.destination_name}</div>
+      <div class="lead-agent">🤝 Assigned: ${l.agent_name} (${l.agency_name})</div>
+      <div class="lead-traveler">
+        👤 <strong>${l.traveler_name}</strong> • ${l.num_travelers} Travelers<br>
+        📞 ${l.traveler_phone} • 🗓️ ${l.travel_dates || 'Flexible'}<br>
+        <em style="color:#0284C7;">"${l.notes || 'Looking for tour quote'}"</em>
+      </div>
+    </div>
+  `).join("");
 }
 
 // 1-Click WhatsApp Copy & Print Plan
@@ -304,6 +318,7 @@ async function triggerRecommendation() {
   findBtn.innerHTML = `<span>⏳</span> AI is matching Indian destinations...`;
   findBtn.disabled = true;
 
+  let data = null;
   try {
     const headers = { "Content-Type": "application/json" };
     if (currentCustomKey) {
@@ -323,21 +338,98 @@ async function triggerRecommendation() {
       })
     });
 
-    if (!res.ok) throw new Error("Failed to fetch recommendation");
-    const data = await res.json();
+    if (res.ok) {
+      data = await res.json();
+    }
+  } catch (err) {
+    // Backend offline or on GitHub Pages
+  }
+
+  // Client-side fallback for GitHub Pages or offline usage
+  if (!data) {
+    data = generateClientSideRecommendation({ prompt, vibe, companions, budget, duration_days });
+  }
+
+  if (data) {
     lastRecommendationData = data;
-    
     renderAIResults(data);
     renderCostBreakdown(data);
     resultsArea.style.display = "block";
     resultsArea.scrollIntoView({ behavior: "smooth" });
-
-  } catch (err) {
-    console.error("Error in AI recommendation:", err);
-  } finally {
-    findBtn.innerHTML = `<span class="btn-icon">⚡</span> Suggest Best Place & Local Agents`;
-    findBtn.disabled = false;
   }
+
+  findBtn.innerHTML = `<span class="btn-icon">⚡</span> Suggest Best Place & Local Agents`;
+  findBtn.disabled = false;
+}
+
+// Client-side heuristic recommendation generator for GitHub Pages & Offline
+function generateClientSideRecommendation({ prompt, vibe, companions, budget, duration_days }) {
+  const destinations = (allDestinations && allDestinations.length > 0) ? allDestinations : (window.STATIC_DESTINATIONS || []);
+  const agents = (allAgents && allAgents.length > 0) ? allAgents : (window.STATIC_AGENTS || []);
+
+  if (!destinations || destinations.length === 0) return null;
+
+  const scored = destinations.map(d => {
+    let score = 10;
+    const cat = (d.category || "").toLowerCase();
+    const v = (vibe || "").toLowerCase();
+
+    if (v && v !== "any") {
+      if (v.includes(cat) || cat.includes(v)) score += 15;
+      else if (["adventure", "trekking"].includes(v) && cat === "mountains") score += 15;
+      else if (["relaxation", "peace"].includes(v) && ["nature", "beaches"].includes(cat)) score += 12;
+      else if (["culture", "history"].includes(v) && ["heritage", "spiritual"].includes(cat)) score += 15;
+    }
+
+    if (companions === "couple" && ["munnar", "manali", "jaipur_udaipur", "goa", "kashmir", "andaman"].includes(d.id)) score += 10;
+    else if (companions === "family" && ["jaipur_udaipur", "munnar", "rishikesh", "varanasi", "kashmir", "andaman", "jaisalmer"].includes(d.id)) score += 10;
+    else if (companions === "friends" && ["manali", "goa", "rishikesh", "ladakh", "meghalaya", "hampi", "andaman", "jaisalmer"].includes(d.id)) score += 10;
+    else if (companions === "solo" && ["varanasi", "rishikesh", "meghalaya", "ladakh", "hampi"].includes(d.id)) score += 10;
+
+    if (prompt) {
+      const p = prompt.toLowerCase();
+      if (p.includes(d.id) || p.includes(d.name.toLowerCase()) || p.includes(d.state.toLowerCase())) score += 30;
+      if (d.highlights && d.highlights.some(h => p.includes(h.toLowerCase()))) score += 20;
+    }
+
+    return { destination: d, score: score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  const primary = scored[0].destination;
+  const alternatives = scored.slice(1, 4).map(s => s.destination);
+
+  const itinerary = [];
+  const highlights = primary.highlights || ["Local Sightseeing", "Cultural Experience", "Scenic Sunset"];
+  for (let day = 1; day <= duration_days; day++) {
+    let title, activity, tips;
+    if (day === 1) {
+      title = `Arrival in ${primary.name.split('&')[0].trim()} & Scenic Welcome`;
+      activity = `Arrive and check in to your stay. Spend a relaxed afternoon exploring the local town center, taking in the atmosphere, and sampling authentic regional delicacies for ${companions} travelers.`;
+      tips = "Rest well to acclimatize and settle in.";
+    } else if (day === duration_days) {
+      title = "Souvenir Shopping & Farewell Departure";
+      activity = `Morning visit to local markets for traditional handicrafts and spices. Enjoy a scenic farewell breakfast before heading for your return journey.`;
+      tips = "Coordinate with your local tourist agent for smooth departure transit.";
+    } else {
+      const hl = highlights[(day - 2) % highlights.length];
+      title = `Day ${day}: Experience ${hl}`;
+      activity = `Full day guided exploration: Head out early to experience ${hl}. Engage with local culture and capture breathtaking memories suited for ${companions}.`;
+      tips = "Book through your verified local agent to avoid peak crowd lines.";
+    }
+    itinerary.push({ day, title, activity, tips });
+  }
+
+  const matchedAgents = agents.filter(a => a.destination_id === primary.id);
+
+  return {
+    primary_destination: primary,
+    suggested_itinerary: itinerary,
+    recommended_agents: matchedAgents,
+    alternative_destinations: alternatives,
+    ai_narrative: `Based on your choice for a ${duration_days}-day trip with ${companions} seeking ${vibe} vibes, ${primary.name} in ${primary.state} offers the optimal blend of activities, verified certified guides, and authentic Indian hospitality.`,
+    source: "BharatYatra Static Engine (GitHub Pages Ready)"
+  };
 }
 
 function renderCostBreakdown(data) {
@@ -525,11 +617,15 @@ async function initExploreTab() {
 
   try {
     const res = await fetch(`${API_BASE}/api/destinations`);
-    allDestinations = await res.json();
-    renderDestinationsGrid(allDestinations);
+    if (res.ok) {
+      allDestinations = await res.json();
+    } else {
+      allDestinations = window.STATIC_DESTINATIONS || [];
+    }
   } catch (err) {
-    console.error("Failed to load destinations:", err);
+    allDestinations = window.STATIC_DESTINATIONS || [];
   }
+  renderDestinationsGrid(allDestinations);
 
   pills.forEach(pill => {
     pill.addEventListener("click", () => {
@@ -588,11 +684,15 @@ async function initAgentsTab() {
 
   try {
     const res = await fetch(`${API_BASE}/api/agents`);
-    allAgents = await res.json();
-    renderAllAgents(allAgents);
+    if (res.ok) {
+      allAgents = await res.json();
+    } else {
+      allAgents = window.STATIC_AGENTS || [];
+    }
   } catch (err) {
-    console.error("Failed to load agents:", err);
+    allAgents = window.STATIC_AGENTS || [];
   }
+  renderAllAgents(allAgents);
 
   searchInput.addEventListener("input", (e) => {
     const query = e.target.value.toLowerCase().trim();
@@ -644,6 +744,20 @@ function initModal() {
     const travelers = parseInt(document.getElementById("enq-travelers").value) || 2;
     const notes = document.getElementById("enq-notes").value;
 
+    const agentList = (allAgents && allAgents.length > 0) ? allAgents : (window.STATIC_AGENTS || []);
+    const destList = (allDestinations && allDestinations.length > 0) ? allDestinations : (window.STATIC_DESTINATIONS || []);
+    const agent = agentList.find(a => a.id === agentId) || {};
+    const dest = destList.find(d => d.id === destId) || {};
+    const destName = dest.name || destId;
+
+    let whatsappUrl = "";
+    if (agent.whatsapp) {
+      const rawMsg = `Namaste ${agent.name}! I am ${name}. Found your profile on BharatYatra AI.\nTrip: ${destName}\nTravelers: ${travelers}\nDates: ${date || 'Flexible'}\nNotes: ${notes || 'Looking for quote'}`;
+      whatsappUrl = `https://wa.me/${agent.whatsapp}?text=${encodeURIComponent(rawMsg)}`;
+    }
+
+    let enquiryId = `ENQ-${Math.floor(1000 + Math.random() * 9000)}`;
+
     try {
       const res = await fetch(`${API_BASE}/api/enquiry`, {
         method: "POST",
@@ -659,20 +773,44 @@ function initModal() {
         })
       });
 
-      const result = await res.json();
-      modal.style.display = "none";
-      showToast(`Enquiry registered (${result.enquiry_id})! Opening WhatsApp...`);
-      refreshPlatformStats();
-      
-      // Open WhatsApp chat in new window
-      if (result.whatsapp_chat_url) {
-        window.open(result.whatsapp_chat_url, "_blank");
+      if (res.ok) {
+        const result = await res.json();
+        enquiryId = result.enquiry_id;
+        if (result.whatsapp_chat_url) {
+          whatsappUrl = result.whatsapp_chat_url;
+        }
       }
-
     } catch (err) {
-      console.error("Failed to submit enquiry:", err);
-      modal.style.display = "none";
-      showToast("Enquiry registered! Opening WhatsApp chat directly.");
+      console.info("Saved enquiry locally (backend offline or on GitHub Pages).");
+    }
+
+    // Save lead locally so it persists and displays in Leads modal
+    const localRecord = {
+      id: enquiryId,
+      destination_id: destId,
+      destination_name: destName,
+      agent_id: agentId,
+      agent_name: agent.name || "Local Guide",
+      agency_name: agent.agency_name || "Verified Operator",
+      traveler_name: name,
+      traveler_phone: phone,
+      travel_dates: date || "Flexible",
+      num_travelers: travelers,
+      notes: notes || "Looking forward to customized packages and quotes.",
+      whatsapp_url: whatsappUrl,
+      created_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    const existingLeads = JSON.parse(localStorage.getItem("bharatyatra_leads") || "[]");
+    existingLeads.unshift(localRecord);
+    localStorage.setItem("bharatyatra_leads", JSON.stringify(existingLeads));
+
+    modal.style.display = "none";
+    showToast(`Enquiry registered (${enquiryId})! Opening WhatsApp...`);
+    refreshPlatformStats();
+
+    if (whatsappUrl) {
+      window.open(whatsappUrl, "_blank");
     }
   });
 }

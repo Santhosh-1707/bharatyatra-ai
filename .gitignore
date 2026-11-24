@@ -44,3 +44,8 @@ build/
 *.swo
 .DS_Store
 Thumbs.db
+
+# Tunnel & Key Secrets
+.ssh_key*
+cloudflared.exe
+PUBLIC_URL.txt

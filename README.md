@@ -35,6 +35,24 @@ An AI-powered mobile web application (PWA) that empowers tourists to discover th
 
 ---
 
+## 🌐 Live GitHub Pages & Web Deployment
+
+BharatYatra AI includes a static offline fallback mode, allowing it to run directly on **GitHub Pages** without requiring an active Python server:
+
+1. **GitHub Pages URL**: `https://<your-username>.github.io/bharatyatra-ai/`
+2. **Setup**:
+   - Go to your repository on GitHub: `Settings` > `Pages`.
+   - Under **Build and deployment**:
+     - **Option 1 (Automated GitHub Actions)**: Select Source `GitHub Actions` (the repository includes `.github/workflows/deploy-pages.yml`).
+     - **Option 2 (Branch Deploy)**: Select Source `Deploy from a branch`, Branch `main`, Folder `/ (root)` or `/docs`, and click Save.
+3. In GitHub Pages mode:
+   - All 12 curated Indian destinations and 21 verified guides load instantly.
+   - The client-side recommendation engine generates day-by-day itineraries and cost breakdowns.
+   - 1-click WhatsApp deep links connect directly to local guides.
+   - Booking leads are stored in browser local storage.
+
+---
+
 ## 🚀 How to Run for Demo
 
 ### Step 1: Start the Server

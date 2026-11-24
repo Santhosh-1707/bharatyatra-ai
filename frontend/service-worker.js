@@ -1,20 +1,21 @@
 // BharatYatra AI - PWA Service Worker for Offline Caching
-const CACHE_NAME = 'bharatyatra-cache-v1.1';
+const CACHE_NAME = 'bharatyatra-cache-v1.2';
 const STATIC_ASSETS = [
-  '/',
-  '/static/styles.css',
-  '/static/app.js',
-  '/static/manifest.json',
-  '/api/destinations',
-  '/api/agents',
-  '/api/stats'
+  './',
+  './index.html',
+  './styles.css',
+  './app.js',
+  './static_data.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[ServiceWorker] Pre-caching offline assets');
-      return cache.addAll(STATIC_ASSETS);
+      return Promise.allSettled(
+        STATIC_ASSETS.map((asset) => cache.add(asset).catch(() => {}))
+      );
     }).then(() => self.skipWaiting())
   );
 });
