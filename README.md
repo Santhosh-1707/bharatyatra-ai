@@ -62,7 +62,7 @@ python run_app.py
 
 ### Step 2: Open in Browser
 - **On Laptop / Presentation Screen**: [http://localhost:8000](http://localhost:8000)
-- **On Phone over Local Wi-Fi**: Open the IP displayed in terminal (e.g. `http://192.168.1.X:8000`)
+- **On Phone **: https://santhosh-1707.github.io/bharatyatra-ai/
 - **API Documentation (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Live Leads JSON**: [http://localhost:8000/api/enquiries](http://localhost:8000/api/enquiries)
 
